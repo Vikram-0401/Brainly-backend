@@ -1,9 +1,10 @@
 import express from "express";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-import { ContentModel, UserModel } from "./db.js";
+import { ContentModel, LinkModel, UserModel } from "./db.js";
 import { JWT_PASSWORD } from "./config.js";
 import { UserMiddleware } from "./middleware.js";
+import { random } from "./utils.js";
 
 const app = express();
 app.use(express.json());
@@ -61,6 +62,7 @@ app.post("/api/v1/content", UserMiddleware, async (req, res) => {
     await ContentModel.create({
         link, 
         type,
+        title: req.body.title, 
         // @ts-ignore
         userId: req.userId,
         tags: []
@@ -83,7 +85,7 @@ app.get("/api/v1/content", UserMiddleware, async (req, res) => {
     })
 })
 
-app.delete("/api/v1/content", async (req, res) => {
+app.delete("/api/v1/content", UserMiddleware, async (req, res) => {
     const contentId = req.body.contentId;
     await ContentModel.deleteMany({
         contentId,
@@ -98,7 +100,23 @@ app.delete("/api/v1/content", async (req, res) => {
     
 })
 
-app.post("/api/v1/brain/share", (req, res) => {
+app.post("/api/v1/brain/share", UserMiddleware, async (req, res) => {
+    const share = req.body.share;
+    if(share){
+        await LinkModel.create({
+            userId: req.userId,
+            hash: random(10)
+
+        })
+    } else {
+        await LinkModel.deleteOne({
+            userId: req.userId
+        })
+    }
+
+    res.json({
+        message: "Updated sharable link"
+    })
     
 })
 
